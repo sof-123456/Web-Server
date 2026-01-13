@@ -2,23 +2,22 @@ use std::{
     fs,
     io::{BufReader, prelude::*},
     net::{TcpListener, TcpStream},
-    
+    thread,
+    time::Duration,
 };
-use std::fs::File;
+use  last_project::ThreadPool;
 
 
 fn main() {
     let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
-
-    let mut file = File::open("hello.html").unwrap();
-    let mut bytes = Vec::new();
-    file.read_to_end(&mut bytes).unwrap();
-
+   
+        let pool = ThreadPool::new(4);
     for stream in  listener.incoming()
     {
          let stream = stream.unwrap();
-         println!("test");
-         handle_connection(stream);
+          pool.execute(|| { 
+            handle_connection(stream)
+     });
     }
 
     
@@ -34,17 +33,17 @@ fn   handle_connection (mut stream: TcpStream )
   //    .take_while(|line| !line.is_empty())
   //    .collect();
      let   request_line =  buf_reader.lines().next().unwrap().unwrap();
-     
-    let  (status_line,filename) = if request_line == "GET / HTTP/1.1"   
-       {
-            ("HTTP/1.1 200 OK", "hello.html")
-       }
-       else 
-       {
-          ("HTTP/1.1 404 NOT FOUND", "404.html")
-       };
-     
-             
+     println!("{:?}",request_line);
+    let  (status_line,filename) = match request_line.as_str()  {
+     "GET / HTTP/1.1"   =>("HTTP/1.1 200 OK", "hello.html"), 
+     line if line.starts_with("GET /sleep") =>
+         { 
+          thread::sleep(Duration::from_secs(5));
+      
+         ("HTTP/1.1 200 OK", "hello.html")
+         }
+       _  => ("HTTP/1.1 404 NOT FOUND", "404.html"),
+        } ;     
              let contents = fs::read_to_string(filename).unwrap();
              let length = contents.len();
 
@@ -54,6 +53,7 @@ fn   handle_connection (mut stream: TcpStream )
             
              stream.write_all(response.as_bytes()).unwrap();
 
-       }
+       
+    }
        
     
