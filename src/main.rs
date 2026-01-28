@@ -46,13 +46,13 @@ pub fn handle_connection(mut stream: TcpStream) {
             .split_whitespace()
             .next()
             .unwrap_or("");
-
         let translation = translate(word);
         let body = format!("Original: {}\nTranslation (HY): {}", word, translation);
         
+
         // Note: Content-Type header is vital for displaying Armenian characters correctly
         let response = format!(
-            "HTTP/1.1 200 OK\r\nConten  t-Type: text/plain; charset=utf-8\r\nContent-Length: {}\r\n\r\n{}",
+            "HTTP/1.1 200 OK\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: {}\r\n\r\n{}",
             body.len(),   
             body
         );
